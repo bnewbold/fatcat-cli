@@ -138,54 +138,84 @@ impl ApiModelMutate for models::ReleaseEntity {
 
 impl ApiModelMutate for models::ContainerEntity {
     fn mutate(&mut self, mutations: Vec<Mutation>) -> Result<()> {
-        unimplemented!("mutations")
+        for m in mutations {
+            match (m.field.as_str(), m.value) {
+                ("name", val) => { self.name = val; },
+                (field, _) => unimplemented!("setting field {} on a container", field),
+            }
+        }
+        Ok(())
     }
 }
 
 impl ApiModelMutate for models::CreatorEntity {
     fn mutate(&mut self, mutations: Vec<Mutation>) -> Result<()> {
-        unimplemented!("mutations")
+        for m in mutations {
+            match (m.field.as_str(), m.value) {
+                ("display_name", val) => { self.display_name = val; },
+                (field, _) => unimplemented!("setting field {} on a creator", field),
+            }
+        }
+        Ok(())
     }
 }
 
 impl ApiModelMutate for models::WorkEntity {
-    fn mutate(&mut self, mutations: Vec<Mutation>) -> Result<()> {
+    fn mutate(&mut self, _mutations: Vec<Mutation>) -> Result<()> {
         unimplemented!("mutations")
     }
 }
 
 impl ApiModelMutate for models::FileEntity {
     fn mutate(&mut self, mutations: Vec<Mutation>) -> Result<()> {
-        unimplemented!("mutations")
+        for m in mutations {
+            match (m.field.as_str(), m.value) {
+                ("mimetype", val) => { self.mimetype = val; },
+                (field, _) => unimplemented!("setting field {} on a file", field),
+            }
+        }
+        Ok(())
     }
 }
 
 impl ApiModelMutate for models::FilesetEntity {
-    fn mutate(&mut self, mutations: Vec<Mutation>) -> Result<()> {
+    fn mutate(&mut self, _mutations: Vec<Mutation>) -> Result<()> {
         unimplemented!("mutations")
     }
 }
 
 impl ApiModelMutate for models::WebcaptureEntity {
-    fn mutate(&mut self, mutations: Vec<Mutation>) -> Result<()> {
+    fn mutate(&mut self, _mutations: Vec<Mutation>) -> Result<()> {
         unimplemented!("mutations")
     }
 }
 
 impl ApiModelMutate for models::Editor {
     fn mutate(&mut self, mutations: Vec<Mutation>) -> Result<()> {
-        unimplemented!("mutations")
+        for m in mutations {
+            match (m.field.as_str(), m.value) {
+                ("username", Some(val)) => { self.username = val; },
+                (field, _) => unimplemented!("setting field {} on an editor", field),
+            }
+        }
+        Ok(())
     }
 }
 
 impl ApiModelMutate for models::Editgroup {
     fn mutate(&mut self, mutations: Vec<Mutation>) -> Result<()> {
-        unimplemented!("mutations")
+        for m in mutations {
+            match (m.field.as_str(), m.value) {
+                ("description", val) => { self.description = val; },
+                (field, _) => unimplemented!("setting field {} on an editgroup", field),
+            }
+        }
+        Ok(())
     }
 }
 
 impl ApiModelMutate for models::ChangelogEntry {
-    fn mutate(&mut self, mutations: Vec<Mutation>) -> Result<()> {
+    fn mutate(&mut self, _mutations: Vec<Mutation>) -> Result<()> {
         unimplemented!("mutations")
     }
 }
