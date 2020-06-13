@@ -1,0 +1,41 @@
+[package]
+name = "fatcat-cli"
+version = "0.3.0-dev"
+edition = "2018"
+authors = ["Bryan Newbold <bnewbold@robocracy.org>"]
+license = "AGPL-3+"
+description = "CLI tool for fatcat.wiki, an open digital catalog of research papers"
+readme = "README_cli.md"
+homepage = "https://fatcat.wiki"
+repository = "https://github.com/internetarchive/fatcat"
+keywords = ["cli", "fatcat", "digital-library"]
+categories = ["command-line-utilities"]
+
+
+[dependencies]
+data-encoding = "2.1"
+fatcat-openapi = { version = "*", path = "../fatcat-openapi", default-features = false, features = ["client"] }
+macaroon = { git = "https://github.com/bnewbold/libmacaroon-rs", branch = "bnewbold-broken" }
+toml = "0.5"
+termcolor = "1"
+atty = "0.2"
+tabwriter = "1.2"
+#human-panic = "1"
+structopt = "0.3"
+swagger = "4"
+hyper = "0.12"
+tokio = "0.1.17"
+serde_json = "1.0"
+anyhow = "1.0"
+log = "0.4"
+env_logger = "0.7"
+regex = { version = "1.3", default-features = false, features = ["perf-literal"] }
+lazy_static = "1"
+serde = "1.0"
+reqwest = "0.9"
+chrono-humanize = "*"
+tempfile = "3"
+
+
+[dev-dependencies]
+assert_cmd = "1"

@@ -1,0 +1,17 @@
+
+x type/struct to wrap api_client and runtime
+x trait
+x parse "specifier"
+- API auth (token, context)
+- "status" command
+    => auth_check
+    => build a struct with serde_json+prettyprint
+- switch from failure to anyhow = "1.0"
+- editgroup creation
+
+- updating using CLI specifiers
+- edit command
+- multiple files?
+
+Random old command:
+    OPENSSL_LIB_DIR="/usr/lib/x86_64-linux-gnu" OPENSSL_INCLUDE_DIR="/usr/include/openssl" cargo build

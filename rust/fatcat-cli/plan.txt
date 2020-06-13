@@ -1,0 +1,116 @@
+
+x search release, query string, limit, dumping search doc JSON
+x search release, query string, limit, fetching API for each
+x search release, query string, scroll API, fetching API for each
+
+x handle stdout terminated
+
+x editgroup creation
+    => set agent
+x editgroup accept
+x editgroup submit
+x editgroup list
+
+x release create from json/TOML, to an editgroup
+x release delete, to an editgroup
+x release update from full json/TOML to API
+x release edit (using $EDITOR, temp file)
+
+- -n/--num for limits
+- -o/--output and -i/--input for format/schema selection (including 'es-json')
+- parse editgroup specifier
+    => "auto": fetch from recent; default?
+    => "new": create
+    => editgroup_blah or blah
+- release update fields and submit to editgroup
+    => more fields, at least 10
+- implement "delete from editgroup" for creation, updates, edit
+    => fetch editgroup helper
+    => helper function that takes editgroup (model) and expanded specifier; deletes existing edit from editgroup if necessary
+    => skip this codepath for "new" and batch creation
+- implement @-syntax for create/update
+- later: some variant of @-syntax for stream of multiple updates/creations?
+- editgroup creation outputs just editgroup on stdout (unless output type selected), plus "success" to stderr
+
+- download single file:
+    => try archive.org files, then wayback, then original URLs
+    => download to current directory as {sha1hex}.pdf.partial, then atomic move on success
+- syntect coloring of output for stdout
+- expand/hide flags for get, search
+- search/update/etc containers (and files?)
+
+- polish and test so actually usable for release edits from search
+    => manpage
+    => bash completion
+    => .deb generation
+    => consider moving to new repo, with copy of fatcat-openapi-client
+    => cross build for OS X? homebrew?
+
+- search release, filters, scroll API, fetching API for each
+    => structopt parses: query, filter, anti-filter
+- search release, filters, scroll API, fetching API for each, verifying revision and filters for each
+- optional directory structure: {dir}/{hex}/{hex}/{sha1hex}.pdf
+- parallelism of downloads
+
+- history for all entity types
+    => pretty table, json optional
+- get revisions for all entity types
+
+- fcid/UUID helper
+
+## Design Decisions
+
+- batch/multi behavior for mutations
+    => need some option to do auto-accept batches
+- updates and create, from-file vs. args
+    => basically, could be any of specifier, input_file, mutations supplied on command-line
+    => could use httpie @file.blah syntax to load entire file
+    => "edit" as an option for reading single files from disk? meh
+    proposal:
+        create <type>
+            either reads a file from path/stdin, or has mutation args
+            optionally --new-editgroup
+        create-multi <type>
+            reads multiple JSON from file or stdin
+            optionally --auto-batch in chunks
+            optionally --new-editgroup
+        update <specifier>
+            takes a specifier
+            either reads a file from path/stdin, or has mutation args
+        update-multi <type>
+            reads multiple JSON from file or stdin
+            creates new editgroup?
+        edit <specifier>
+        delete <specifier>
+        delete-batch <type>
+            reads multiple entities from stdin
+
+        --skip-check controls whether to do a GET and validate mutations
+            => eg, don't update if equal
+- holding state about current editgroup
+    => env var, with helpful output to show how to export
+    => spawn sub-shell with FATCAT_EDITGROUP set
+    => state in a config file somewhere (user homedir?)
+    => "smart" select most recent fatcat-cli editgroup from editor's list
+- release revision checking on updates
+    => could re-fetch and check rev and/or mutations against current before making edit
+- delete edit from editgroup
+
+## Rust refactors
+
+In rust code, all entity responses could have trait object implementations,
+which would transform to either returning the entity (trait object) or error.
+
+## API refactors
+
+Could significantly reduce number of response types and endpoints by making
+many methods generic (same endpoint URL, but entity type as a keyword):
+
+- entity history
+- delete
+- get edit
+
+Should allow destructive updates in editgroups with "clobber" flag. In
+implementation, could either delete first or on conflict do upsert.
+
+More consistent use of generic success/error?
