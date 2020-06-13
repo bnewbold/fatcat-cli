@@ -3,9 +3,6 @@ use std::str::FromStr;
 use anyhow::{Result, anyhow, Context};
 use lazy_static::lazy_static;
 use regex::Regex;
-use toml;
-use serde_json;
-use serde;
 use fatcat_openapi::models;
 use crate::Specifier;
 

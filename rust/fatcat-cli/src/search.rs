@@ -29,7 +29,7 @@ impl Iterator for SearchResults {
             }
         }
         // if current batch is empty, and we are scrolling, refill the current batch
-        if self.batch.len() == 0 && self.scroll_id.is_some() {
+        if self.batch.is_empty() && self.scroll_id.is_some() {
             let response = self.http_client.get(&self.scroll_url)
                 .header("Content-Type", "application/json")
                 .body(json!({
@@ -53,16 +53,16 @@ impl Iterator for SearchResults {
         }
 
         // return next hit from the most recent batch
-        if self.batch.len() > 0 {
+        if !self.batch.is_empty() {
             self.offset += 1;
             let val = self.batch.pop().unwrap();
             let source = val["_source"].clone();
-            return Some(Ok(source))
+            return Some(Ok(source));
         }
 
         // if batch is empty and couldn't be refilled, terminate
         // TODO: should we raise error if ended early?
-        return None
+        None
     }
 }
 
@@ -72,7 +72,7 @@ pub fn crude_search(api_host: &str, entity_type: EntityType, limit: Option<u64>,
         EntityType::Release => "fatcat_release",
         EntityType::File => "fatcat_file",
         EntityType::Container => "fatcat_container",
-        _ => Err(anyhow!("No search index for entity type: {:?}", entity_type))?,
+        _ => return Err(anyhow!("No search index for entity type: {:?}", entity_type)),
     };
     let http_client = reqwest::Client::builder()
         .timeout(Duration::from_secs(10))
@@ -80,7 +80,7 @@ pub fn crude_search(api_host: &str, entity_type: EntityType, limit: Option<u64>,
         .build()
         .expect("ERROR :: Could not build reqwest client");
 
-    let query: String = if terms.len() == 0 {
+    let query: String = if terms.is_empty() {
         "*".to_string()
     } else {
         terms.join(" ")
@@ -148,14 +148,15 @@ pub fn crude_search(api_host: &str, entity_type: EntityType, limit: Option<u64>,
     let mut response = request.send()?;
 
     if !response.status().is_success() {
-        Err(anyhow!("search error, status={}", response.status()))?;
+        return Err(anyhow!("search error, status={}", response.status()));
     }
     //println!("{:?}", response);
     let body: serde_json::Value = response.json()?;
 
-    let scroll_id = match scroll_mode {
-        false => None,
-        true => Some(body["_scroll_id"].as_str().unwrap().to_string()),
+    let scroll_id = if scroll_mode {
+        None
+    } else {
+        Some(body["_scroll_id"].as_str().unwrap().to_string())
     };
 
     Ok(SearchResults {

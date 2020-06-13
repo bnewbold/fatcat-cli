@@ -6,11 +6,9 @@ use tabwriter::TabWriter;
 use chrono_humanize::HumanTime;
 use anyhow::{Result, anyhow, Context};
 use std::io::Write;
-use atty;
 use termcolor::{ColorChoice, StandardStream, Color, ColorSpec, WriteColor};
 use data_encoding::BASE64;
 use macaroon::{Macaroon, Verifier};
-use fatcat_openapi;
 use fatcat_openapi::models;
 #[allow(unused_imports)]
 use log::{self,info,debug};
@@ -79,15 +77,12 @@ impl ClientStatus {
         };
         color_stdout.set_color(&color_normal)?;
         write!(&mut color_stdout, "{:>16}: ", "API auth token")?;
-        match self.has_api_token {
-            true => {
-                color_stdout.set_color(&color_happy)?;
-                writeln!(&mut color_stdout, "[configured]")?;
-            },
-            false => {
-                color_stdout.set_color(&color_sad)?;
-                writeln!(&mut color_stdout, "[not configured]")?;
-            },
+        if self.has_api_token {
+            color_stdout.set_color(&color_happy)?;
+            writeln!(&mut color_stdout, "[configured]")?;
+        } else {
+            color_stdout.set_color(&color_sad)?;
+            writeln!(&mut color_stdout, "[not configured]")?;
         };
         if let Some(editor) = self.account {
             color_stdout.set_color(&color_normal)?;
@@ -163,7 +158,7 @@ pub fn parse_macaroon_editor_id(s: &str) -> Result<String> {
     }
     let editor_id = match editor_id {
         Some(id) => id,
-        None => Err(anyhow!("expected an editor_id caveat in macaroon token"))?,
+        None => return Err(anyhow!("expected an editor_id caveat in macaroon token")),
     };
     verifier.satisfy_exact(&format!("editor_id = {}", editor_id.to_string()));
     Ok(editor_id)
@@ -183,7 +178,7 @@ pub fn print_editgroups(eg_list: Vec<models::Editgroup>, json: bool) -> Result<(
                 eg.changelog_index.map_or("-".to_string(), |v| v.to_string()),
                 eg.created.map_or("-".to_string(), |v| HumanTime::from(v).to_string()),
                 eg.submitted.map_or("-".to_string(), |v| HumanTime::from(v).to_string()),
-                eg.description.unwrap_or("-".to_string()))?;
+                eg.description.unwrap_or_else(|| "-".to_string()))?;
         }
         tw.flush()?;
     }

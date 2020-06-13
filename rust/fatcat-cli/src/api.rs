@@ -1,8 +1,6 @@
 
-use log::{self,info,debug};
 use hyper::client::ResponseFuture;
-use fatcat_openapi;
-use fatcat_openapi::{ApiNoContext, ApiError, ContextWrapperExt};
+use fatcat_openapi::{ApiNoContext, ContextWrapperExt};
 use fatcat_openapi::client::Client;
 use fatcat_openapi::models;
 use swagger::{AuthData, ContextBuilder, EmptyContext, Push, XSpanIdString, auth};
@@ -10,9 +8,10 @@ use anyhow::{Result, anyhow, Context};
 use crate::{ClientStatus,parse_macaroon_editor_id,Specifier, EntityType};
 use tokio::runtime::current_thread::Runtime;
 
+type FatcatApiContextType = swagger::make_context_ty!( ContextBuilder, EmptyContext, Option<AuthData>, XSpanIdString);
 
 pub struct FatcatApiClient<'a> {
-    pub api: fatcat_openapi::ContextWrapper<'a, Client<ResponseFuture>, swagger::make_context_ty!( ContextBuilder, EmptyContext, Option<AuthData>, XSpanIdString)>,
+    pub api: fatcat_openapi::ContextWrapper<'a, Client<ResponseFuture>, FatcatApiContextType>,
     pub rt: tokio::runtime::current_thread::Runtime,
     api_token: Option<String>,
     api_host: String,
@@ -28,24 +27,14 @@ impl<'a> FatcatApiClient<'a> {
             None => None,
         };
         //info!("{:?}", auth_data);
-        let context: swagger::make_context_ty!(
-            ContextBuilder,
-            EmptyContext,
-            Option<AuthData>,
-            XSpanIdString
-        ) = swagger::make_context!(
+        let context: FatcatApiContextType = swagger::make_context!(
             ContextBuilder,
             EmptyContext,
             auth_data,
             XSpanIdString::default()
         );
 
-        let wrapped_client: fatcat_openapi::ContextWrapper<Client<ResponseFuture>, swagger::make_context_ty!(
-            ContextBuilder,
-            EmptyContext,
-            Option<AuthData>,
-            XSpanIdString
-        )> = client.with_context(context);
+        let wrapped_client: fatcat_openapi::ContextWrapper<Client<ResponseFuture>, FatcatApiContextType> = client.with_context(context);
         let rt: Runtime = Runtime::new().expect("create tokio runtime");
 
         let editor_id = match api_token {
@@ -56,7 +45,7 @@ impl<'a> FatcatApiClient<'a> {
         Ok(FatcatApiClient {
             api: wrapped_client,
             rt,
-            api_token: api_token,
+            api_token,
             editor_id,
             api_host,
         })
@@ -73,12 +62,12 @@ impl<'a> FatcatApiClient<'a> {
                 fatcat_openapi::AuthCheckResponse::Success(_) => Ok(()),
                 fatcat_openapi::AuthCheckResponse::Forbidden(err) => Err(anyhow!("Forbidden ({}): {}", err.error, err.message)),
                 fatcat_openapi::AuthCheckResponse::NotAuthorized{body: err, ..} => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
-                resp => Err(anyhow!("{:?}", resp)).context(format!("auth check failed"))?,
+                resp => return Err(anyhow!("{:?}", resp)).context("auth check failed".to_string()),
             }.context("check auth token")?;
             match self.rt.block_on(self.api.get_editor(self.editor_id.as_ref().unwrap().to_string())).context("fetching editor account info")? {
                 fatcat_openapi::GetEditorResponse::Found(editor) => Some(editor),
-                fatcat_openapi::GetEditorResponse::NotFound(err) => Err(anyhow!("Not Found: {}", err.message))?,
-                resp => Err(anyhow!("{:?}", resp)).context(format!("editor fetch failed"))?,
+                fatcat_openapi::GetEditorResponse::NotFound(err) => return Err(anyhow!("Not Found: {}", err.message)),
+                resp => return Err(anyhow!("{:?}", resp)).context("editor fetch failed".to_string()),
             }
         } else {
             None
@@ -97,8 +86,8 @@ impl<'a> FatcatApiClient<'a> {
         ).context("fetch editgroups")?;
         let eg = match result {
             fatcat_openapi::GetEditgroupResponse::Found(eg) => eg,
-            other => Err(anyhow!("{:?}", other))
-                .context(format!("failed to fetch editgroup {}", editgroup_id))?,
+            other => return Err(anyhow!("{:?}", other))
+                .context(format!("failed to fetch editgroup {}", editgroup_id)),
         };
         let result = self.rt.block_on(
             self.api.update_editgroup(editgroup_id.clone(), eg, Some(submit))
@@ -106,7 +95,7 @@ impl<'a> FatcatApiClient<'a> {
         match result {
             fatcat_openapi::UpdateEditgroupResponse::UpdatedEditgroup(eg) => Ok(eg),
             other => Err(anyhow!("{:?}", other))
-                .context(format!("failed to submit editgroup {}", editgroup_id))?,
+                .context(format!("failed to submit editgroup {}", editgroup_id)),
         }
     }
 
@@ -143,9 +132,9 @@ impl<'a> FatcatApiClient<'a> {
                 other => Err(anyhow!("{:?}", other)),
             },
             Editgroup(..) | Editor(..) => unimplemented!("deletion for this entity type"),
-            Changelog(..) => Err(anyhow!("mutating this entity type doesn't make sense"))?,
+            Changelog(..) => return Err(anyhow!("mutating this entity type doesn't make sense")),
             EditorUsername(..) | ReleaseLookup(..) | ContainerLookup(..) | FileLookup(..) | CreatorLookup(..) =>
-                Err(anyhow!("into_entity_specifier() didn't work?"))?,
+                return Err(anyhow!("into_entity_specifier() didn't work?")),
         }.context(format!("failed to delete {:?}", specifier))
     }
 
@@ -229,9 +218,9 @@ impl<'a> FatcatApiClient<'a> {
                 other => Err(anyhow!("{:?}", other)),
             },
             Editgroup(..) | Editor(..) => unimplemented!("updates for this entity type"),
-            Changelog(..) => Err(anyhow!("deleting this entity type doesn't make sense"))?,
+            Changelog(..) => return Err(anyhow!("deleting this entity type doesn't make sense")),
             EditorUsername(..) | ReleaseLookup(..) | ContainerLookup(..) | FileLookup(..) | CreatorLookup(..) =>
-                Err(anyhow!("into_entity_specifier() didn't work?"))?,
+                return Err(anyhow!("into_entity_specifier() didn't work?")),
         }.context(format!("failed to update {:?}", specifier))
     }
 }

@@ -1,7 +1,6 @@
 
 use std::path::PathBuf;
 use fatcat_cli::ApiModelSer;
-use atty;
 use std::io::Write;
 use termcolor::{ColorChoice, StandardStream, Color, ColorSpec, WriteColor};
 use anyhow::{Result, Context, anyhow};
@@ -168,14 +167,11 @@ fn main() -> Result<()> {
     if let Err(err) = run(opt) {
         // Be graceful about some errors
         if let Some(io_err) = err.root_cause().downcast_ref::<std::io::Error>() {
-            match io_err.kind() {
-                std::io::ErrorKind::BrokenPipe => {
-                    // presumably due to something like writing to stdout and piped to `head -n10` and
-                    // stdout was closed
-                    debug!("got BrokenPipe error, assuming stdout closed as expected and exiting with success");
-                    std::process::exit(0);
-                },
-                _ => (),
+            if let std::io::ErrorKind::BrokenPipe = io_err.kind() {
+                // presumably due to something like writing to stdout and piped to `head -n10` and
+                // stdout was closed
+                debug!("got BrokenPipe error, assuming stdout closed as expected and exiting with success");
+                std::process::exit(0);
             }
         }
         let mut color_stderr = StandardStream::stderr(
@@ -201,7 +197,7 @@ fn run(opt: Opt) -> Result<()> {
         // Using HTTP
         client::Client::try_new_http(&opt.api_host).context("Failed to create HTTP client")?
     } else {
-        Err(anyhow!("unsupported API Host prefix: {}", opt.api_host))?
+        return Err(anyhow!("unsupported API Host prefix: {}", opt.api_host));
     };
 
     let mut api_client = FatcatApiClient::new(&client, opt.api_host.clone(), opt.api_token.clone())?;
@@ -256,7 +252,7 @@ fn run(opt: Opt) -> Result<()> {
                 .expect("failed to execute process");
             let cmd_status = editor_cmd.wait()?;
             if !cmd_status.success() {
-                Err(anyhow!("editor ({}) exited with non-success status code ({}), bailing on edit", editing_command, cmd_status.code().map(|v| v.to_string()).unwrap_or("N/A".to_string())))?;
+                return Err(anyhow!("editor ({}) exited with non-success status code ({}), bailing on edit", editing_command, cmd_status.code().map(|v| v.to_string()).unwrap_or_else(|| "N/A".to_string())));
             };
             let json_str = read_entity_file(Some(tmp_file.path().to_path_buf()))?;
             // for whatever reason api_client's TCP connection is broken after spawning, so try a
@@ -288,13 +284,13 @@ fn run(opt: Opt) -> Result<()> {
         },
         Command::Delete { specifier, editgroup_id } => {
             let result = api_client.delete_entity(specifier.clone(), editgroup_id)
-                .context(format!("delete entity: {:?}", specifier.clone()))?;
+                .context(format!("delete entity: {:?}", specifier))?;
             println!("{}", serde_json::to_string(&result)?);
         },
         Command::Editgroup { cmd: EditgroupCommand::List { editor_id, limit, json } } => {
             let editor_id = match editor_id.or(api_client.editor_id) {
                 Some(eid) => eid,
-                None => Err(anyhow!("require either working auth token or --editor-id"))?,
+                None => return Err(anyhow!("require either working auth token or --editor-id")),
             };
             let result = api_client.rt.block_on(
                 api_client.api.get_editor_editgroups(editor_id.clone(), Some(limit), None, None)
@@ -303,7 +299,7 @@ fn run(opt: Opt) -> Result<()> {
                 fatcat_openapi::GetEditorEditgroupsResponse::Found(eg_list) => {
                     print_editgroups(eg_list, json)?;
                 },
-                other => Err(anyhow!("{:?}", other)).context(format!("failed to fetch editgroups for editor_{}", editor_id))?,
+                other => return Err(anyhow!("{:?}", other)).context(format!("failed to fetch editgroups for editor_{}", editor_id)),
             }
         },
         Command::Editgroup { cmd: EditgroupCommand::Reviewable { limit, json } } => {
@@ -314,7 +310,7 @@ fn run(opt: Opt) -> Result<()> {
                 fatcat_openapi::GetEditgroupsReviewableResponse::Found(eg_list) => {
                     print_editgroups(eg_list, json)?;
                 },
-                other => Err(anyhow!("{:?}", other)).context(format!("failed to fetch reviewable editgroups"))?,
+                other => return Err(anyhow!("{:?}", other)).context("failed to fetch reviewable editgroups".to_string()),
             }
         },
         Command::Editgroup { cmd: EditgroupCommand::Create { description }} => {
@@ -330,7 +326,7 @@ fn run(opt: Opt) -> Result<()> {
             match result {
                 fatcat_openapi::CreateEditgroupResponse::SuccessfullyCreated(eg) =>
                     println!("{}", serde_json::to_string(&eg)?),
-                other => Err(anyhow!("{:?}", other)).context(format!("failed to create editgroup"))?,
+                other => return Err(anyhow!("{:?}", other)).context("failed to create editgroup".to_string()),
             }
         },
         Command::Editgroup { cmd: EditgroupCommand::Accept { editgroup_id } } => {
@@ -340,7 +336,7 @@ fn run(opt: Opt) -> Result<()> {
             match result {
                 fatcat_openapi::AcceptEditgroupResponse::MergedSuccessfully(msg) =>
                     println!("{}", serde_json::to_string(&msg)?),
-                other => Err(anyhow!("failed to accept editgroup {}: {:?}", editgroup_id, other))?,
+                other => return Err(anyhow!("failed to accept editgroup {}: {:?}", editgroup_id, other)),
             }
         },
         Command::Editgroup { cmd: EditgroupCommand::Submit{ editgroup_id } } => {
