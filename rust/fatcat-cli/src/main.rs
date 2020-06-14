@@ -45,14 +45,14 @@ enum EditgroupCommand {
         #[structopt(long = "--editor-id", short)]
         editor_id: Option<String>,
 
-        #[structopt(long, short, default_value = "20")]
+        #[structopt(long, short = "-n", default_value = "20")]
         limit: i64,
 
         #[structopt(long)]
         json: bool,
     },
     Reviewable {
-        #[structopt(long, short, default_value = "20")]
+        #[structopt(long, short = "-n", default_value = "20")]
         limit: i64,
 
         #[structopt(long)]
@@ -149,7 +149,7 @@ enum Command {
         #[structopt(long = "--hide")]
         hide: Option<String>,
 
-        #[structopt(long, short, default_value = "20")]
+        #[structopt(long, short = "-n", default_value = "20")]
         limit: i64,
 
         #[structopt(long = "--search-schema")]
