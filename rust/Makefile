@@ -20,3 +20,11 @@ fmt: ## Run syntax re-formatting
 .PHONY: build
 build: ## Build
 	cargo build
+
+.PHONY: manpage
+manpage: ## Rebuild manpage using scdoc
+	scdoc < fatcat-cli/fatcat-cli.1.scdoc > fatcat-cli/fatcat-cli.1
+
+.PHONY: deb
+deb: ## Build debian packages (.deb files)
+	cargo deb -p fatcat-cli
