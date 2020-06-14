@@ -81,6 +81,12 @@ enum Command {
     Get {
         specifier: Specifier,
 
+        #[structopt(long = "--expand")]
+        expand: Option<String>,
+
+        #[structopt(long = "--hide")]
+        hide: Option<String>,
+
         #[structopt(long)]
         toml: bool,
     },
@@ -136,6 +142,12 @@ enum Command {
         entity_type: EntityType,
 
         terms: Vec<String>,
+
+        #[structopt(long = "--expand")]
+        expand: Option<String>,
+
+        #[structopt(long = "--hide")]
+        hide: Option<String>,
 
         #[structopt(long, short, default_value = "20")]
         limit: i64,
@@ -203,8 +215,8 @@ fn run(opt: Opt) -> Result<()> {
     let mut api_client = FatcatApiClient::new(&client, opt.api_host.clone(), opt.api_token.clone())?;
 
     match opt.cmd {
-        Command::Get {toml, specifier} => {
-            let result = specifier.get_from_api(&mut api_client)?;
+        Command::Get {toml, specifier, expand, hide } => {
+            let result = specifier.get_from_api(&mut api_client, expand, hide)?;
             if toml {
                 writeln!(&mut std::io::stdout(), "{}", result.to_toml_string()?)?
             } else {
@@ -224,7 +236,7 @@ fn run(opt: Opt) -> Result<()> {
                 },
                 // no input path *and* mutations: fetch from API
                 (None, _) => {
-                    let mut entity = specifier.get_from_api(&mut api_client)?;
+                    let mut entity = specifier.get_from_api(&mut api_client, None, None)?;
                     entity.mutate(mutations)?;
                     (entity.to_json_string()?, entity.specifier())
                 },
@@ -236,7 +248,7 @@ fn run(opt: Opt) -> Result<()> {
             // TODO: fetch editgroup, check if this entity is already being updated in it. If so,
             // need to fetch that revision, do the edit, parse that synatx is good, then delete the
             // existing edit and update with the new one.
-            let original_entity = specifier.get_from_api(&mut api_client)?;
+            let original_entity = specifier.get_from_api(&mut api_client, None, None)?;
             let exact_specifier = original_entity.specifier();
             let tmp_file = tempfile::Builder::new()
                 .suffix( if json { ".json" } else { ".toml"} )
@@ -257,11 +269,11 @@ fn run(opt: Opt) -> Result<()> {
             let json_str = read_entity_file(Some(tmp_file.path().to_path_buf()))?;
             // for whatever reason api_client's TCP connection is broken after spawning, so try a
             // dummy call, expected to fail, but connection should re-establish after this
-            specifier.get_from_api(&mut api_client).context("re-fetch").ok();
+            specifier.get_from_api(&mut api_client, None, None).context("re-fetch").ok();
             let ee = api_client.update_entity_from_json(exact_specifier, &json_str, editgroup_id).context("updating after edit")?;
             println!("{}", serde_json::to_string(&ee)?);
         },
-        Command::Search { entity_type, terms, limit, search_schema } => {
+        Command::Search { entity_type, terms, limit, search_schema, expand, hide } => {
             let limit: Option<u64> = match limit {
                 l if l < 0 => None,
                 l => Some(l as u64),
@@ -275,7 +287,7 @@ fn run(opt: Opt) -> Result<()> {
                     (true, _) => writeln!(&mut std::io::stdout(), "{}", hit.to_string())?,
                     (false, EntityType::Release) => {
                         let specifier = Specifier::Release(hit["ident"].as_str().unwrap().to_string());
-                        let entity = specifier.get_from_api(&mut api_client)?;
+                        let entity = specifier.get_from_api(&mut api_client, expand.clone(), hide.clone())?;
                         writeln!(&mut std::io::stdout(), "{}", entity.to_json_string()?)?
                     },
                     (false, _) => unimplemented!("searching other entity types"),
