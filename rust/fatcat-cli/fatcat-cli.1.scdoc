@@ -6,12 +6,43 @@ fatcat-cli - something something
 
 # SYNOPSIS
 
+fatcat-cli [FLAGS] [OPTIONS] <SUBCOMMAND>
+
+Subcommands:
+
+	create
+	delete
+	edit
+	editgroup
+	get
+	help
+	search
+	status
+	update
+
 # DESCRIPTION
 
 # OPTIONS
+
+*-h, --help*
+	Prints help information
+
+*-V, --version*
+	Prints version information
+
+*-v, --verbose*
+	Pass many times for more log output
+	By default, it'll only report errors. Passing `-v` one time also prints warnings, `-vv` enables info logging, `-vvv` debug, and `-vvvv` trace.
+
+*--api-host <api-host>* [env: FATCAT_API_HOST] [default: https://api.fatcat.wiki]
+
+*--api-token <api-token>* [env: FATCAT_API_AUTH_TOKEN]
+
+*--search-host <search-host>* [env: FATCAT_SEARCH_HOST] [default: https://search.fatcat.wiki]
 
 # EXAMPLES
 
 Some examples of usage will go here, like:
 
 	fatcat-cli get thing
+

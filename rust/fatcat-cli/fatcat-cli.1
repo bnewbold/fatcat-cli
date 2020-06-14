@@ -12,9 +12,47 @@ fatcat-cli - something something
 .P
 .SH SYNOPSIS
 .P
+fatcat-cli [FLAGS] [OPTIONS] <SUBCOMMAND>
+.P
+Subcommands:
+.P
+.RS 4
+create
+delete
+edit
+editgroup
+get
+help
+search
+status
+update
+.P
+.RE
 .SH DESCRIPTION
 .P
 .SH OPTIONS
+.P
+\fB-h, --help\fR
+.RS 4
+Prints help information
+.P
+.RE
+\fB-V, --version\fR
+.RS 4
+Prints version information
+.P
+.RE
+\fB-v, --verbose\fR
+.RS 4
+Pass many times for more log output
+By default, it'll only report errors. Passing `-v` one time also prints warnings, `-vv` enables info logging, `-vvv` debug, and `-vvvv` trace.
+.P
+.RE
+\fB--api-host <api-host>\fR [env: FATCAT_API_HOST] [default: https://api.fatcat.wiki]
+.P
+\fB--api-token <api-token>\fR [env: FATCAT_API_AUTH_TOKEN]
+.P
+\fB--search-host <search-host>\fR [env: FATCAT_SEARCH_HOST] [default: https://search.fatcat.wiki]
 .P
 .SH EXAMPLES
 .P
@@ -22,4 +60,5 @@ Some examples of usage will go here, like:
 .P
 .RS 4
 fatcat-cli get thing
+.P
 .RE
