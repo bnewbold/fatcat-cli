@@ -78,7 +78,7 @@ impl Specifier {
                     fatcat_openapi::GetReleaseResponse::FoundEntity(model) => Ok(Box::new(model)),
                     fatcat_openapi::GetReleaseResponse::BadRequest(err) => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
                     fatcat_openapi::GetReleaseResponse::NotFound(err) => Err(anyhow!("Not Found: {}", err.message)),
-                    resp => Err(anyhow!("{:?}", resp)).context(format!("API GET failed: {:?}", self)),
+                    resp => Err(anyhow!("{:?}", resp)).with_context(|| format!("API GET failed: {:?}", self)),
                 },
             ReleaseLookup(ext_id, key) => {
                 use ReleaseLookupKey::*;
@@ -95,7 +95,7 @@ impl Specifier {
                     fatcat_openapi::LookupReleaseResponse::FoundEntity(model) => Ok(Box::new(model)),
                     fatcat_openapi::LookupReleaseResponse::BadRequest(err) => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
                     fatcat_openapi::LookupReleaseResponse::NotFound(err) => Err(anyhow!("Not Found: {}", err.message)),
-                    resp => Err(anyhow!("{:?}", resp)).context(format!("API GET failed: {:?}", self)),
+                    resp => Err(anyhow!("{:?}", resp)).with_context(|| format!("API GET failed: {:?}", self)),
                 }
             },
             Work(fcid) =>
@@ -103,14 +103,14 @@ impl Specifier {
                     fatcat_openapi::GetWorkResponse::FoundEntity(model) => Ok(Box::new(model)),
                     fatcat_openapi::GetWorkResponse::BadRequest(err) => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
                     fatcat_openapi::GetWorkResponse::NotFound(err) => Err(anyhow!("Not Found: {}", err.message)),
-                    resp => Err(anyhow!("{:?}", resp)).context(format!("API GET failed: {:?}", self)),
+                    resp => Err(anyhow!("{:?}", resp)).with_context(|| format!("API GET failed: {:?}", self)),
                 },
             Container(fcid) =>
                 match api_client.rt.block_on(api_client.api.get_container(fcid.to_string(), expand, hide))? {
                     fatcat_openapi::GetContainerResponse::FoundEntity(model) => Ok(Box::new(model)),
                     fatcat_openapi::GetContainerResponse::BadRequest(err) => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
                     fatcat_openapi::GetContainerResponse::NotFound(err) => Err(anyhow!("Not Found: {}", err.message)),
-                    resp => Err(anyhow!("{:?}", resp)).context(format!("API GET failed: {:?}", self)),
+                    resp => Err(anyhow!("{:?}", resp)).with_context(|| format!("API GET failed: {:?}", self)),
                 },
             ContainerLookup(ext_id, key) => {
                 let result = api_client.rt.block_on(match ext_id {
@@ -120,7 +120,7 @@ impl Specifier {
                     fatcat_openapi::LookupContainerResponse::FoundEntity(model) => Ok(Box::new(model)),
                     fatcat_openapi::LookupContainerResponse::BadRequest(err) => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
                     fatcat_openapi::LookupContainerResponse::NotFound(err) => Err(anyhow!("Not Found: {}", err.message)),
-                    resp => Err(anyhow!("{:?}", resp)).context(format!("API GET failed: {:?}", self)),
+                    resp => Err(anyhow!("{:?}", resp)).with_context(|| format!("API GET failed: {:?}", self)),
                 }
             },
             Creator(fcid) =>
@@ -128,7 +128,7 @@ impl Specifier {
                     fatcat_openapi::GetCreatorResponse::FoundEntity(model) => Ok(Box::new(model)),
                     fatcat_openapi::GetCreatorResponse::BadRequest(err) => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
                     fatcat_openapi::GetCreatorResponse::NotFound(err) => Err(anyhow!("Not Found: {}", err.message)),
-                    resp => Err(anyhow!("{:?}", resp)).context(format!("API GET failed: {:?}", self)),
+                    resp => Err(anyhow!("{:?}", resp)).with_context(|| format!("API GET failed: {:?}", self)),
                 },
             CreatorLookup(ext_id, key) => {
                 let result = api_client.rt.block_on(match ext_id {
@@ -138,7 +138,7 @@ impl Specifier {
                     fatcat_openapi::LookupCreatorResponse::FoundEntity(model) => Ok(Box::new(model)),
                     fatcat_openapi::LookupCreatorResponse::BadRequest(err) => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
                     fatcat_openapi::LookupCreatorResponse::NotFound(err) => Err(anyhow!("Not Found: {}", err.message)),
-                    resp => Err(anyhow!("{:?}", resp)).context(format!("API GET failed: {:?}", self)),
+                    resp => Err(anyhow!("{:?}", resp)).with_context(|| format!("API GET failed: {:?}", self)),
                 }
             },
             File(fcid) =>
@@ -146,7 +146,7 @@ impl Specifier {
                     fatcat_openapi::GetFileResponse::FoundEntity(model) => Ok(Box::new(model)),
                     fatcat_openapi::GetFileResponse::BadRequest(err) => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
                     fatcat_openapi::GetFileResponse::NotFound(err) => Err(anyhow!("Not Found: {}", err.message)),
-                    resp => Err(anyhow!("{:?}", resp)).context(format!("API GET failed: {:?}", self)),
+                    resp => Err(anyhow!("{:?}", resp)).with_context(|| format!("API GET failed: {:?}", self)),
                 },
             FileLookup(hash, key) => {
                 use FileLookupKey::*;
@@ -162,7 +162,7 @@ impl Specifier {
                     fatcat_openapi::LookupFileResponse::FoundEntity(model) => Ok(Box::new(model)),
                     fatcat_openapi::LookupFileResponse::BadRequest(err) => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
                     fatcat_openapi::LookupFileResponse::NotFound(err) => Err(anyhow!("Not Found: {}", err.message)),
-                    resp => Err(anyhow!("{:?}", resp)).context(format!("API GET failed: {:?}", self)),
+                    resp => Err(anyhow!("{:?}", resp)).with_context(|| format!("API GET failed: {:?}", self)),
                 }
             },
             FileSet(fcid) =>
@@ -170,35 +170,35 @@ impl Specifier {
                     fatcat_openapi::GetFilesetResponse::FoundEntity(model) => Ok(Box::new(model)),
                     fatcat_openapi::GetFilesetResponse::BadRequest(err) => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
                     fatcat_openapi::GetFilesetResponse::NotFound(err) => Err(anyhow!("Not Found: {}", err.message)),
-                    resp => Err(anyhow!("{:?}", resp)).context(format!("API GET failed: {:?}", self)),
+                    resp => Err(anyhow!("{:?}", resp)).with_context(|| format!("API GET failed: {:?}", self)),
                 },
             WebCapture(fcid) =>
                 match api_client.rt.block_on(api_client.api.get_webcapture(fcid.to_string(), expand, hide))? {
                     fatcat_openapi::GetWebcaptureResponse::FoundEntity(model) => Ok(Box::new(model)),
                     fatcat_openapi::GetWebcaptureResponse::BadRequest(err) => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
                     fatcat_openapi::GetWebcaptureResponse::NotFound(err) => Err(anyhow!("Not Found: {}", err.message)),
-                    resp => Err(anyhow!("{:?}", resp)).context(format!("API GET failed: {:?}", self)),
+                    resp => Err(anyhow!("{:?}", resp)).with_context(|| format!("API GET failed: {:?}", self)),
                 },
             Editgroup(fcid) =>
                 match api_client.rt.block_on(api_client.api.get_editgroup(fcid.to_string()))? {
                     fatcat_openapi::GetEditgroupResponse::Found(model) => Ok(Box::new(model)),
                     fatcat_openapi::GetEditgroupResponse::BadRequest(err) => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
                     fatcat_openapi::GetEditgroupResponse::NotFound(err) => Err(anyhow!("Not Found: {}", err.message)),
-                    resp => Err(anyhow!("{:?}", resp)).context(format!("API GET failed: {:?}", self)),
+                    resp => Err(anyhow!("{:?}", resp)).with_context(|| format!("API GET failed: {:?}", self)),
                 },
             Editor(fcid) =>
                 match api_client.rt.block_on(api_client.api.get_editor(fcid.to_string()))? {
                     fatcat_openapi::GetEditorResponse::Found(model) => Ok(Box::new(model)),
                     fatcat_openapi::GetEditorResponse::BadRequest(err) => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
                     fatcat_openapi::GetEditorResponse::NotFound(err) => Err(anyhow!("Not Found: {}", err.message)),
-                    resp => Err(anyhow!("{:?}", resp)).context(format!("API GET failed: {:?}", self)),
+                    resp => Err(anyhow!("{:?}", resp)).with_context(|| format!("API GET failed: {:?}", self)),
                 },
             Changelog(index) =>
                 match api_client.rt.block_on(api_client.api.get_changelog_entry(*index))? {
                     fatcat_openapi::GetChangelogEntryResponse::FoundChangelogEntry(model) => Ok(Box::new(model)),
                     fatcat_openapi::GetChangelogEntryResponse::BadRequest(err) => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
                     fatcat_openapi::GetChangelogEntryResponse::NotFound(err) => Err(anyhow!("Not Found: {}", err.message)),
-                    resp => Err(anyhow!("{:?}", resp)).context(format!("API GET failed: {:?}", self)),
+                    resp => Err(anyhow!("{:?}", resp)).with_context(|| format!("API GET failed: {:?}", self)),
                 },
             EditorUsername(_username) => {
                 unimplemented!("editor lookup by username isn't implemented in fatcat-server API yet, sorry")

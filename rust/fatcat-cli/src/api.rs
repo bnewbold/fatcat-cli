@@ -62,12 +62,12 @@ impl<'a> FatcatApiClient<'a> {
                 fatcat_openapi::AuthCheckResponse::Success(_) => Ok(()),
                 fatcat_openapi::AuthCheckResponse::Forbidden(err) => Err(anyhow!("Forbidden ({}): {}", err.error, err.message)),
                 fatcat_openapi::AuthCheckResponse::NotAuthorized{body: err, ..} => Err(anyhow!("Bad Request ({}): {}", err.error, err.message)),
-                resp => return Err(anyhow!("{:?}", resp)).context("auth check failed".to_string()),
+                resp => return Err(anyhow!("{:?}", resp)).context("auth check failed"),
             }.context("check auth token")?;
             match self.rt.block_on(self.api.get_editor(self.editor_id.as_ref().unwrap().to_string())).context("fetching editor account info")? {
                 fatcat_openapi::GetEditorResponse::Found(editor) => Some(editor),
                 fatcat_openapi::GetEditorResponse::NotFound(err) => return Err(anyhow!("Not Found: {}", err.message)),
-                resp => return Err(anyhow!("{:?}", resp)).context("editor fetch failed".to_string()),
+                resp => return Err(anyhow!("{:?}", resp)).context("editor fetch failed"),
             }
         } else {
             None
@@ -87,7 +87,7 @@ impl<'a> FatcatApiClient<'a> {
         let eg = match result {
             fatcat_openapi::GetEditgroupResponse::Found(eg) => eg,
             other => return Err(anyhow!("{:?}", other))
-                .context(format!("failed to fetch editgroup {}", editgroup_id)),
+                .with_context(|| format!("failed to fetch editgroup {}", editgroup_id)),
         };
         let result = self.rt.block_on(
             self.api.update_editgroup(editgroup_id.clone(), eg, Some(submit))
@@ -95,7 +95,7 @@ impl<'a> FatcatApiClient<'a> {
         match result {
             fatcat_openapi::UpdateEditgroupResponse::UpdatedEditgroup(eg) => Ok(eg),
             other => Err(anyhow!("{:?}", other))
-                .context(format!("failed to submit editgroup {}", editgroup_id)),
+                .with_context(|| format!("failed to submit editgroup {}", editgroup_id)),
         }
     }
 
@@ -135,7 +135,7 @@ impl<'a> FatcatApiClient<'a> {
             Changelog(..) => return Err(anyhow!("mutating this entity type doesn't make sense")),
             EditorUsername(..) | ReleaseLookup(..) | ContainerLookup(..) | FileLookup(..) | CreatorLookup(..) =>
                 return Err(anyhow!("into_entity_specifier() didn't work?")),
-        }.context(format!("failed to delete {:?}", specifier))
+        }.with_context(|| format!("failed to delete {:?}", specifier))
     }
 
     pub fn create_entity_from_json(&mut self, entity_type: EntityType, json_str: &str, editgroup_id: String) -> Result<models::EntityEdit> {
@@ -182,7 +182,7 @@ impl<'a> FatcatApiClient<'a> {
                     other => Err(anyhow!("{:?}", other)),
                 }
             },
-        }.context(format!("parsing and creating {:?} entity", entity_type))
+        }.with_context(|| format!("parsing and creating {:?} entity", entity_type))
     }
 
     pub fn update_entity_from_json(&mut self, specifier: Specifier, json_str: &str, editgroup_id: String) -> Result<models::EntityEdit> {
@@ -221,6 +221,6 @@ impl<'a> FatcatApiClient<'a> {
             Changelog(..) => return Err(anyhow!("deleting this entity type doesn't make sense")),
             EditorUsername(..) | ReleaseLookup(..) | ContainerLookup(..) | FileLookup(..) | CreatorLookup(..) =>
                 return Err(anyhow!("into_entity_specifier() didn't work?")),
-        }.context(format!("failed to update {:?}", specifier))
+        }.with_context(|| format!("failed to update {:?}", specifier))
     }
 }

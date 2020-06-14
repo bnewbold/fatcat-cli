@@ -279,7 +279,7 @@ fn run(opt: Opt) -> Result<()> {
                 l => Some(l as u64),
             };
             let results = fatcat_cli::crude_search(&opt.search_host, entity_type, limit, terms)
-                .context(format!("searching for {:?}", entity_type))?;
+                .with_context(|| format!("searching for {:?}", entity_type))?;
             eprintln!("Got {} hits in {}ms", results.count, results.took_ms);
             for hit in results {
                 let hit = hit?;
@@ -296,7 +296,7 @@ fn run(opt: Opt) -> Result<()> {
         },
         Command::Delete { specifier, editgroup_id } => {
             let result = api_client.delete_entity(specifier.clone(), editgroup_id)
-                .context(format!("delete entity: {:?}", specifier))?;
+                .with_context(|| format!("delete entity: {:?}", specifier))?;
             println!("{}", serde_json::to_string(&result)?);
         },
         Command::Editgroup { cmd: EditgroupCommand::List { editor_id, limit, json } } => {
@@ -311,7 +311,7 @@ fn run(opt: Opt) -> Result<()> {
                 fatcat_openapi::GetEditorEditgroupsResponse::Found(eg_list) => {
                     print_editgroups(eg_list, json)?;
                 },
-                other => return Err(anyhow!("{:?}", other)).context(format!("failed to fetch editgroups for editor_{}", editor_id)),
+                other => return Err(anyhow!("{:?}", other)).with_context(|| format!("failed to fetch editgroups for editor_{}", editor_id)),
             }
         },
         Command::Editgroup { cmd: EditgroupCommand::Reviewable { limit, json } } => {
@@ -322,7 +322,7 @@ fn run(opt: Opt) -> Result<()> {
                 fatcat_openapi::GetEditgroupsReviewableResponse::Found(eg_list) => {
                     print_editgroups(eg_list, json)?;
                 },
-                other => return Err(anyhow!("{:?}", other)).context("failed to fetch reviewable editgroups".to_string()),
+                other => return Err(anyhow!("{:?}", other)).context("failed to fetch reviewable editgroups"),
             }
         },
         Command::Editgroup { cmd: EditgroupCommand::Create { description }} => {
@@ -338,7 +338,7 @@ fn run(opt: Opt) -> Result<()> {
             match result {
                 fatcat_openapi::CreateEditgroupResponse::SuccessfullyCreated(eg) =>
                     println!("{}", serde_json::to_string(&eg)?),
-                other => return Err(anyhow!("{:?}", other)).context("failed to create editgroup".to_string()),
+                other => return Err(anyhow!("{:?}", other)).context("failed to create editgroup"),
             }
         },
         Command::Editgroup { cmd: EditgroupCommand::Accept { editgroup_id } } => {

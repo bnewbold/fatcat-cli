@@ -1,6 +1,6 @@
 
 use std::str::FromStr;
-use anyhow::{Result, anyhow, Context};
+use anyhow::{Result, anyhow};
 use lazy_static::lazy_static;
 use regex::Regex;
 use fatcat_openapi::models;
