@@ -126,6 +126,17 @@ impl ApiModelMutate for models::ReleaseEntity {
             match (m.field.as_str(), m.value) {
                 ("title", val) => { self.title = val; },
                 ("subtitle", val) => { self.subtitle = val; },
+                ("container_id", val) => { self.container_id = val; },
+                ("work_id", val) => { self.work_id = val; },
+                ("release_type", val) => { self.release_type = val; },
+                ("release_stage", val) => { self.release_stage = val; },
+                ("withdrawn_status", val) => { self.withdrawn_status = val; },
+                ("license_slug", val) => { self.license_slug= val; },
+                ("volume", val) => { self.volume = val; },
+                ("issue", val) => { self.issue = val; },
+                ("number", val) => { self.number = val; },
+                ("publisher", val) => { self.publisher = val; },
+                ("language", val) => { self.language = val; },
                 (field, _) => unimplemented!("setting field {} on a release", field),
             }
         }
@@ -138,6 +149,9 @@ impl ApiModelMutate for models::ContainerEntity {
         for m in mutations {
             match (m.field.as_str(), m.value) {
                 ("name", val) => { self.name = val; },
+                ("container_type", val) => { self.container_type = val; },
+                ("publisher", val) => { self.publisher = val; },
+                ("issnl", val) => { self.issnl = val; },
                 (field, _) => unimplemented!("setting field {} on a container", field),
             }
         }
@@ -150,6 +164,8 @@ impl ApiModelMutate for models::CreatorEntity {
         for m in mutations {
             match (m.field.as_str(), m.value) {
                 ("display_name", val) => { self.display_name = val; },
+                ("given_name", val) => { self.given_name = val; },
+                ("surname", val) => { self.surname = val; },
                 (field, _) => unimplemented!("setting field {} on a creator", field),
             }
         }
@@ -167,6 +183,11 @@ impl ApiModelMutate for models::FileEntity {
     fn mutate(&mut self, mutations: Vec<Mutation>) -> Result<()> {
         for m in mutations {
             match (m.field.as_str(), m.value) {
+                ("size", Some(val)) => { self.size = Some(i64::from_str(&val)?); },
+                ("size", None) => { self.size = None; },
+                ("md5", val) => { self.md5 = val; },
+                ("sha1", val) => { self.sha1 = val; },
+                ("sha256", val) => { self.sha256 = val; },
                 ("mimetype", val) => { self.mimetype = val; },
                 (field, _) => unimplemented!("setting field {} on a file", field),
             }
